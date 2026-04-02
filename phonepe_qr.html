@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PhonePe QR Generator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #f0eaff;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .card {
+    background: #fff;
+    border-radius: 20px;
+    padding: 32px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 8px 32px rgba(90,30,180,0.12);
+  }
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  .logo {
+    width: 44px; height: 44px;
+    background: #5a1eb4;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .logo svg { width: 28px; height: 28px; }
+  .header h1 { font-size: 1.3rem; color: #5a1eb4; font-weight: 700; }
+  .header p { font-size: 0.78rem; color: #888; }
+
+  label { display: block; font-size: 0.82rem; font-weight: 600; color: #444; margin-bottom: 5px; }
+  input {
+    width: 100%; padding: 11px 14px;
+    border: 1.5px solid #e0d6f5;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    color: #222;
+    outline: none;
+    transition: border 0.2s;
+    margin-bottom: 16px;
+  }
+  input:focus { border-color: #5a1eb4; }
+  input::placeholder { color: #bbb; }
+
+  .row { display: flex; gap: 12px; }
+  .row > div { flex: 1; }
+
+  .btn {
+    width: 100%;
+    padding: 13px;
+    background: linear-gradient(135deg, #5a1eb4, #7c3aed);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.3px;
+    transition: opacity 0.2s;
+    margin-top: 4px;
+  }
+  .btn:hover { opacity: 0.9; }
+
+  #qr-section {
+    display: none;
+    margin-top: 28px;
+    text-align: center;
+  }
+  #qr-section h2 { font-size: 1rem; color: #5a1eb4; margin-bottom: 16px; font-weight: 600; }
+
+  .qr-wrap {
+    display: inline-block;
+    padding: 16px;
+    background: #fff;
+    border: 2px solid #e0d6f5;
+    border-radius: 16px;
+    box-shadow: 0 2px 12px rgba(90,30,180,0.08);
+  }
+  #qr-code { display: flex; align-items: center; justify-content: center; }
+
+  .upi-tag {
+    margin-top: 14px;
+    font-size: 0.82rem;
+    color: #888;
+    background: #f5f0ff;
+    display: inline-block;
+    padding: 5px 14px;
+    border-radius: 20px;
+  }
+  .upi-tag span { color: #5a1eb4; font-weight: 700; }
+
+  .download-btn {
+    margin-top: 18px;
+    padding: 10px 28px;
+    background: #fff;
+    color: #5a1eb4;
+    border: 2px solid #5a1eb4;
+    border-radius: 10px;
+    font-size: 0.92rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .download-btn:hover { background: #5a1eb4; color: #fff; }
+
+  .error { color: #e53e3e; font-size: 0.82rem; margin-top: -10px; margin-bottom: 10px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="header">
+    <div class="logo">
+      <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M20 5C11.716 5 5 11.716 5 20s6.716 15 15 15 15-6.716 15-15S28.284 5 20 5z" fill="#fff" opacity=".2"/>
+        <path d="M17 13h-4v14h4v-5h3.5c3.038 0 5.5-2.462 5.5-5.5S23.538 13 20.5 13H17zm0 6v-3h3.5c.828 0 1.5.672 1.5 1.5S21.328 19 20.5 19H17z" fill="#fff"/>
+      </svg>
+    </div>
+    <div>
+      <h1>PhonePe QR Generator</h1>
+      <p>Generate UPI payment QR instantly</p>
+    </div>
+  </div>
+
+  <label for="upi">UPI ID *</label>
+  <input id="upi" type="text" placeholder="yourname@ybl / @axl / @paytm" />
+  <div id="upi-err" class="error" style="display:none">Please enter a valid UPI ID</div>
+
+  <label for="name">Payee Name</label>
+  <input id="name" type="text" placeholder="e.g. Rahul Sharma" />
+
+  <div class="row">
+    <div>
+      <label for="amount">Amount (₹)</label>
+      <input id="amount" type="number" min="0" placeholder="Optional" />
+    </div>
+    <div>
+      <label for="note">Note</label>
+      <input id="note" type="text" placeholder="Optional" />
+    </div>
+  </div>
+
+  <button class="btn" onclick="generate()">⚡ Generate QR Code</button>
+
+  <div id="qr-section">
+    <h2>Scan to Pay via PhonePe / Any UPI App</h2>
+    <div class="qr-wrap">
+      <div id="qr-code"></div>
+    </div>
+    <div class="upi-tag">Paying to: <span id="upi-display"></span></div><br>
+    <button class="download-btn" onclick="downloadQR()">⬇ Download QR</button>
+  </div>
+</div>
+
+<script>
+let qrInstance = null;
+
+function generate() {
+  const upi = document.getElementById('upi').value.trim();
+  const name = document.getElementById('name').value.trim();
+  const amount = document.getElementById('amount').value.trim();
+  const note = document.getElementById('note').value.trim();
+  const errEl = document.getElementById('upi-err');
+
+  if (!upi || !upi.includes('@')) {
+    errEl.style.display = 'block';
+    return;
+  }
+  errEl.style.display = 'none';
+
+  let upiUrl = `upi://pay?pa=${encodeURIComponent(upi)}`;
+  if (name) upiUrl += `&pn=${encodeURIComponent(name)}`;
+  if (amount) upiUrl += `&am=${encodeURIComponent(amount)}`;
+  if (note) upiUrl += `&tn=${encodeURIComponent(note)}`;
+  upiUrl += `&cu=INR`;
+
+  const qrDiv = document.getElementById('qr-code');
+  qrDiv.innerHTML = '';
+
+  qrInstance = new QRCode(qrDiv, {
+    text: upiUrl,
+    width: 200,
+    height: 200,
+    colorDark: '#5a1eb4',
+    colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.H
+  });
+
+  document.getElementById('upi-display').textContent = upi;
+  document.getElementById('qr-section').style.display = 'block';
+  document.getElementById('qr-section').scrollIntoView({ behavior: 'smooth' });
+}
+
+function downloadQR() {
+  const canvas = document.querySelector('#qr-code canvas');
+  if (!canvas) return;
+  const link = document.createElement('a');
+  link.download = 'phonepe-qr.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+</script>
+</body>
+</html>
